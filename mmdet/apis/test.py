@@ -10,23 +10,47 @@ import torch.distributed as dist
 from mmcv.image import tensor2imgs
 from mmcv.runner import get_dist_info
 
-from mmdet.core import encode_mask_results
-
+from mmdet.core import encode_mask_results, calculate_bbox_metric
 
 def single_gpu_test(model,
                     data_loader,
                     show=False,
                     out_dir=None,
-                    show_score_thr=0.3):
+                    show_score_thr=0.3,
+                    bbox_metric='area',
+                    dataloader_ref=None):
     model.eval()
     results = []
+    values = []
     dataset = data_loader.dataset
+
+    if dataloader_ref:
+        dataloader_iterator = iter(dataloader_ref)
+
     prog_bar = mmcv.ProgressBar(len(dataset))
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             result = model(return_loss=False, rescale=True, **data)
 
         batch_size = len(result)
+        if bbox_metric != 'area':
+            if dataloader_ref != None:
+                try:
+                    data2 = next(dataloader_iterator)
+                except StopIteration:
+                    dataloader_iterator = iter(dataloader_ref)
+                    data2 = next(dataloader_iterator)
+            else:
+                data2 = data
+
+            if batch_size == 1 and isinstance(data2['img'][0], torch.Tensor):
+                img_tensor = data2['img'][0]
+            else:
+                img_tensor = data2['img'][0].data[0]
+            img_metas = data2['img_metas'][0].data[0]
+            
+            box_metric_values = calculate_bbox_metric(img_tensor, img_metas, result, bbox_metric, out_dir, model)
+
         if show or out_dir:
             if batch_size == 1 and isinstance(data['img'][0], torch.Tensor):
                 img_tensor = data['img'][0]
@@ -61,9 +85,12 @@ def single_gpu_test(model,
                       for bbox_results, mask_results in result]
         results.extend(result)
 
+        if bbox_metric != 'area':
+            values.extend(box_metric_values)
+
         for _ in range(batch_size):
             prog_bar.update()
-    return results
+    return results, values
 
 
 def multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
@@ -111,7 +138,7 @@ def multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
         results = collect_results_gpu(results, len(dataset))
     else:
         results = collect_results_cpu(results, len(dataset), tmpdir)
-    return results
+    return results, values
 
 
 def collect_results_cpu(result_part, size, tmpdir=None):

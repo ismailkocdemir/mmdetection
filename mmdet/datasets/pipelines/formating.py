@@ -199,14 +199,16 @@ class DefaultFormatBundle(object):
                 default bundle.
         """
 
-        if 'img' in results:
-            img = results['img']
+        #if 'img' in results:
+        for key in results.get('img_fields', []):
+            img = results[key]
             # add default meta keys
-            results = self._add_default_meta_keys(results)
+            if key == 'img':
+                results = self._add_default_meta_keys(results)
             if len(img.shape) < 3:
                 img = np.expand_dims(img, -1)
             img = np.ascontiguousarray(img.transpose(2, 0, 1))
-            results['img'] = DC(to_tensor(img), stack=True)
+            results[key] = DC(to_tensor(img), stack=True)
         for key in ['proposals', 'gt_bboxes', 'gt_bboxes_ignore', 'gt_labels']:
             if key not in results:
                 continue

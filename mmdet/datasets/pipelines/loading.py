@@ -1,12 +1,20 @@
 import os.path as osp
-
+import sys
 import mmcv
 import numpy as np
 import pycocotools.mask as maskUtils
+#####################
+import cv2
+from cv2 import IMREAD_COLOR, IMREAD_GRAYSCALE, IMREAD_UNCHANGED
+imread_flags = {
+    'color': IMREAD_COLOR,
+    'grayscale': IMREAD_GRAYSCALE,
+    'unchanged': IMREAD_UNCHANGED
+}
+#####################
 
 from mmdet.core import BitmapMasks, PolygonMasks
 from ..builder import PIPELINES
-
 
 @PIPELINES.register_module()
 class LoadImageFromFile(object):
@@ -31,11 +39,19 @@ class LoadImageFromFile(object):
     def __init__(self,
                  to_float32=False,
                  color_type='color',
-                 file_client_args=dict(backend='disk')):
+                 file_client_args=dict(backend='disk'),
+                 hdr=False,
+                 aligned_hdr=False,
+                 load_mask = False,
+                 hdr_depth=None):
         self.to_float32 = to_float32
         self.color_type = color_type
         self.file_client_args = file_client_args.copy()
         self.file_client = None
+        self.hdr = hdr
+        self.hdr_depth = hdr_depth
+        self.aligned_hdr = aligned_hdr
+        self.load_mask = load_mask
 
     def __call__(self, results):
         """Call functions to load image and get image meta information.
@@ -56,18 +72,69 @@ class LoadImageFromFile(object):
         else:
             filename = results['img_info']['filename']
 
-        img_bytes = self.file_client.get(filename)
-        img = mmcv.imfrombytes(img_bytes, flag=self.color_type)
+        ##img_bytes = self.file_client.get(filename)
+        ##img = mmcv.imfrombytes(img_bytes, flag=self.color_type) 
+        flag = imread_flags[self.color_type] if isinstance(self.color_type, str) else self.color_type
+        if self.hdr:
+            flag += cv2.IMREAD_ANYDEPTH
+        
+        img = cv2.imread(filename, flag)
+        
         if self.to_float32:
             img = img.astype(np.float32)
 
         results['filename'] = filename
         results['ori_filename'] = results['img_info']['filename']
-        results['img'] = img
-        results['img_shape'] = img.shape
-        results['ori_shape'] = img.shape
         results['img_fields'] = ['img']
+        results['img'] = img
+
+        if self.aligned_hdr:
+            flag += cv2.IMREAD_ANYDEPTH
+            hdr_filename = self.get_hdr_filename(filename)
+            img_hdr = cv2.imread(hdr_filename, flag)
+
+            if self.to_float32:
+                img_hdr = img_hdr.astype(np.float32)
+
+            results['img_HDR'] = img_hdr
+            results['img_fields'].append('img_HDR')
+
+        
+        if self.load_mask:
+            maskname = self.get_mask_filename(filename)
+            mask = cv2.imread(maskname)
+            results['mask'] = mask
+            results['seg_fields'] = ['mask']
+      
+        '''
+        if not self.aligned_hdr:
+            results['img'] = img
+        else:
+            mid_point = img.shape[1] // 2
+            results['img_HDR'] = img[:, :mid_point, :]
+            results['img'] = img[:, mid_point:, :]
+            results['img_fields'].append('img_HDR')
+        '''
+
+        results['img_shape'] = results['img'].shape
+        results['ori_shape'] = results['img'].shape            
         return results
+
+    def get_mask_filename(self, filename):
+        splitted = filename.split('/')
+        maskname = "/".join(["masks" if "images" in item else item for item in splitted])
+       
+        maskname = maskname.replace("exr", "jpg")
+        maskname = maskname.replace("png", "jpg")
+        
+        return maskname
+
+    def get_hdr_filename(self, filename):
+        # change image folder from 'images_<TMO-NAME>' to 'images'
+        splitted = filename.split('/')
+        hdr_filename = "/".join(["images" if "images" in item else item for item in splitted])
+        hdr_filename = hdr_filename.replace('png', 'exr')
+        return hdr_filename
 
     def __repr__(self):
         repr_str = (f'{self.__class__.__name__}('

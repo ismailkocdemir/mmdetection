@@ -1,15 +1,14 @@
 import itertools
 import logging
 import os.path as osp
+import os
 import tempfile
-from collections import OrderedDict
 
 import mmcv
 import numpy as np
-import pycocotools
 from mmcv.utils import print_log
-from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
+from .cocoeval.coco_class import COCO
+from .cocoeval.cocoeval_class import COCOeval
 from terminaltables import AsciiTable
 
 from mmdet.core import eval_recalls
@@ -44,27 +43,16 @@ class CocoDataset(CustomDataset):
         Returns:
             list[dict]: Annotation info from COCO api.
         """
-        if not getattr(pycocotools, '__version__', '0') >= '12.0.2':
-            raise AssertionError(
-                'Incompatible version of pycocotools is installed. '
-                'Run pip uninstall pycocotools first. Then run pip '
-                'install mmpycocotools to install open-mmlab forked '
-                'pycocotools.')
 
         self.coco = COCO(ann_file)
         self.cat_ids = self.coco.get_cat_ids(cat_names=self.CLASSES)
         self.cat2label = {cat_id: i for i, cat_id in enumerate(self.cat_ids)}
         self.img_ids = self.coco.get_img_ids()
         data_infos = []
-        total_ann_ids = []
         for i in self.img_ids:
             info = self.coco.load_imgs([i])[0]
             info['filename'] = info['file_name']
             data_infos.append(info)
-            ann_ids = self.coco.get_ann_ids(img_ids=[i])
-            total_ann_ids.extend(ann_ids)
-        assert len(set(total_ann_ids)) == len(
-            total_ann_ids), f"Annotation ids in '{ann_file}' are not unique!"
         return data_infos
 
     def get_ann_info(self, idx):
@@ -349,6 +337,8 @@ class CocoDataset(CustomDataset):
                 the json filepaths, tmp_dir is the temporal directory created \
                 for saving json files when jsonfile_prefix is not specified.
         """
+        if isinstance(results, tuple):
+            results = results[0]
         assert isinstance(results, list), 'results must be a list'
         assert len(results) == len(self), (
             'The length of results is not equal to the dataset len: {} != {}'.
@@ -364,13 +354,18 @@ class CocoDataset(CustomDataset):
 
     def evaluate(self,
                  results,
+                 bbox_quality=[],
                  metric='bbox',
                  logger=None,
                  jsonfile_prefix=None,
                  classwise=False,
                  proposal_nums=(100, 300, 1000),
                  iou_thrs=None,
-                 metric_items=None):
+                 metric_items=None,
+                 bbox_metric="area",
+                 exp_name=None,
+                 dump_path=None
+                 ):
         """Evaluation in COCO protocol.
 
         Args:
@@ -401,7 +396,6 @@ class CocoDataset(CustomDataset):
         Returns:
             dict[str, float]: COCO style evaluation metric.
         """
-
         metrics = metric if isinstance(metric, list) else [metric]
         allowed_metrics = ['bbox', 'segm', 'proposal', 'proposal_fast']
         for metric in metrics:
@@ -414,9 +408,15 @@ class CocoDataset(CustomDataset):
             if not isinstance(metric_items, list):
                 metric_items = [metric_items]
 
+        if dump_path is None:
+            dump_path = osp.join(osp.expanduser('~'), "coco_eval_results")
+
+        if not osp.exists(dump_path):
+            os.makedirs(dump_path)
+
         result_files, tmp_dir = self.format_results(results, jsonfile_prefix)
 
-        eval_results = OrderedDict()
+        eval_results = {}
         cocoGt = self.coco
         for metric in metrics:
             msg = f'Evaluating {metric}...'
@@ -438,7 +438,8 @@ class CocoDataset(CustomDataset):
             if metric not in result_files:
                 raise KeyError(f'{metric} is not in results')
             try:
-                cocoDt = cocoGt.loadRes(result_files[metric])
+                print("DEBUG", len(bbox_quality), bbox_metric)
+                cocoDt = cocoGt.loadRes(result_files[metric], bbox_quality, bbox_metric)
             except IndexError:
                 print_log(
                     'The testing results of the whole dataset is empty.',
@@ -447,32 +448,70 @@ class CocoDataset(CustomDataset):
                 break
 
             iou_type = 'bbox' if metric == 'proposal' else metric
-            cocoEval = COCOeval(cocoGt, cocoDt, iou_type)
+            cocoEval = COCOeval(
+                cocoGt, cocoDt, iou_type, 
+                bbox_metric, 
+                exp_name, 
+                dump_path, 
+                self.coco.bbox_intervals
+            )
             cocoEval.params.catIds = self.cat_ids
             cocoEval.params.imgIds = self.img_ids
             cocoEval.params.maxDets = list(proposal_nums)
             cocoEval.params.iouThrs = iou_thrs
             # mapping of cocoEval.stats
-            coco_metric_names = {
-                'mAP': 0,
-                'mAP_50': 1,
-                'mAP_75': 2,
-                'mAP_s': 3,
-                'mAP_m': 4,
-                'mAP_l': 5,
-                'AR@100': 6,
-                'AR@300': 7,
-                'AR@1000': 8,
-                'AR_s@1000': 9,
-                'AR_m@1000': 10,
-                'AR_l@1000': 11
-            }
+
+            if bbox_metric == "area":
+                coco_metric_names = {
+                    'mAP': 0,
+                    'mAP_50': 1,
+                    'mAP_75': 2,
+                    'mAP_s1': 3,
+                    'mAP_s2': 4,
+                    'mAP_s3': 5,
+                    'mAP_s4': 6,
+                    'mAP_s5': 7,
+                    'mAP_s6': 8,
+                    'mAP_s7': 9,
+                    'mAP_s8': 10,
+                    'AR@100': 11,
+                    'AR@300': 12,
+                    'AR@1000': 13
+                    #'AR_s@1000': 12,
+                    #'AR_m@1000': 13,
+                    #'AR_l@1000': 14
+                }
+            else:
+                coco_metric_names = {
+                    'mAP': 0,
+                    'mAP_50': 1,
+                    'mAP_75': 2,
+                    'mAP_low': 3,
+                    'mAP_med_low': 4,
+                    'mAP_med_high': 5,
+                    'mAP_high': 6,
+                    'AR@100': 7,
+                    'AR@300': 8,
+                    'AR@1000': 9
+                    #'AR_s@1000': 9,
+                    #'AR_m@1000': 10,
+                    #'AR_l@1000': 11
+                }
+            
+            new_metric_names = {}
+            if bbox_metric != 'area':
+                for k,v in coco_metric_names.items():
+                    new_metric_names[k] = v*3
+                    new_metric_names[k + "_common"] = v*3 + 1
+                    new_metric_names[k + "_rare"] = v*3 + 2
+            coco_metric_names = new_metric_names
+
             if metric_items is not None:
                 for metric_item in metric_items:
                     if metric_item not in coco_metric_names:
                         raise KeyError(
                             f'metric item {metric_item} is not supported')
-
+            
             if metric == 'proposal':
                 cocoEval.params.useCats = 0
                 cocoEval.evaluate()
@@ -480,8 +519,8 @@ class CocoDataset(CustomDataset):
                 cocoEval.summarize()
                 if metric_items is None:
                     metric_items = [
-                        'AR@100', 'AR@300', 'AR@1000', 'AR_s@1000',
-                        'AR_m@1000', 'AR_l@1000'
+                        'AR@100', 'AR@300', 'AR@1000'#, 'AR_s@1000',
+                        #'AR_m@1000', 'AR_l@1000'
                     ]
 
                 for item in metric_items:
@@ -489,6 +528,8 @@ class CocoDataset(CustomDataset):
                         f'{cocoEval.stats[coco_metric_names[item]]:.3f}')
                     eval_results[item] = val
             else:
+                cocoEval.params.bbox_metric = bbox_metric
+                cocoEval.params.exp_name = exp_name
                 cocoEval.evaluate()
                 cocoEval.accumulate()
                 cocoEval.summarize()
@@ -527,9 +568,28 @@ class CocoDataset(CustomDataset):
                     print_log('\n' + table.table, logger=logger)
 
                 if metric_items is None:
-                    metric_items = [
-                        'mAP', 'mAP_50', 'mAP_75', 'mAP_s', 'mAP_m', 'mAP_l'
-                    ]
+                    if bbox_metric == "area":
+                        metric_items = [
+                            'mAP', 
+                            'mAP_50',
+                            'mAP_s1', 
+                            'mAP_s2', 
+                            'mAP_s3', 
+                            'mAP_s4', 
+                            'mAP_s5', 
+                            'mAP_s6', 
+                            'mAP_s7', 
+                            'mAP_s8'
+                        ]
+                    else:
+                        metric_items = [
+                            'mAP', 'mAP_common', 'mAP_rare', 
+                            'mAP_50', 'mAP_50_common', 'mAP_50_rare', 
+                            'mAP_low', 'mAP_low_common', 'mAP_low_rare', 
+                            'mAP_med_low',  'mAP_med_low_common', 'mAP_med_low_rare', 
+                            'mAP_med_high',  'mAP_med_high_common', 'mAP_med_high_rare', 
+                            'mAP_high', 'mAP_high_common', 'mAP_high_rare' 
+                            ]
 
                 for metric_item in metric_items:
                     key = f'{metric}_{metric_item}'
@@ -537,7 +597,7 @@ class CocoDataset(CustomDataset):
                         f'{cocoEval.stats[coco_metric_names[metric_item]]:.3f}'
                     )
                     eval_results[key] = val
-                ap = cocoEval.stats[:6]
+                ap = cocoEval.stats[:6+3*(bbox_metric=="area")]
                 eval_results[f'{metric}_mAP_copypaste'] = (
                     f'{ap[0]:.3f} {ap[1]:.3f} {ap[2]:.3f} {ap[3]:.3f} '
                     f'{ap[4]:.3f} {ap[5]:.3f}')
