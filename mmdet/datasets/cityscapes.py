@@ -206,12 +206,16 @@ class CityscapesDataset(CocoDataset):
 
     def evaluate(self,
                  results,
+                 bbox_quality,
                  metric='bbox',
                  logger=None,
                  outfile_prefix=None,
                  classwise=False,
                  proposal_nums=(100, 300, 1000),
-                 iou_thrs=np.arange(0.5, 0.96, 0.05)):
+                 iou_thrs=np.arange(0.5, 0.96, 0.05),
+                 bbox_metric="area",
+                 exp_name="default-exp",
+                 dump_path=None):
         """Evaluation in Cityscapes/COCO protocol.
 
         Args:
@@ -266,8 +270,9 @@ class CityscapesDataset(CocoDataset):
             self_coco.CLASSES = self.CLASSES
             self_coco.data_infos = self_coco.load_annotations(self.ann_file)
             eval_results.update(
-                self_coco.evaluate(results, metrics, logger, outfile_prefix,
-                                   classwise, proposal_nums, iou_thrs))
+                self_coco.evaluate(results, bbox_quality, metrics, logger, outfile_prefix,
+                                   classwise, proposal_nums, iou_thrs, None, 
+                                   bbox_metric, exp_name, dump_path, True))
 
         return eval_results
 

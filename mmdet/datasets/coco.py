@@ -363,8 +363,9 @@ class CocoDataset(CustomDataset):
                  iou_thrs=None,
                  metric_items=None,
                  bbox_metric="area",
-                 exp_name=None,
-                 dump_path=None
+                 exp_name="default-exp",
+                 dump_path=None,
+                 use_cityscapes=False
                  ):
         """Evaluation in COCO protocol.
 
@@ -453,7 +454,8 @@ class CocoDataset(CustomDataset):
                 bbox_metric, 
                 exp_name, 
                 dump_path, 
-                self.coco.bbox_intervals
+                self.coco.bbox_intervals,
+                use_cityscapes
             )
             cocoEval.params.catIds = self.cat_ids
             cocoEval.params.imgIds = self.img_ids
@@ -504,7 +506,7 @@ class CocoDataset(CustomDataset):
                     new_metric_names[k] = v*3
                     new_metric_names[k + "_common"] = v*3 + 1
                     new_metric_names[k + "_rare"] = v*3 + 2
-            coco_metric_names = new_metric_names
+                coco_metric_names = new_metric_names
 
             if metric_items is not None:
                 for metric_item in metric_items:

@@ -186,7 +186,7 @@ def main():
 
     if not distributed:
         model = MMDataParallel(model, device_ids=[0])
-        outputs = single_gpu_test(model, data_loader, args.show, args.show_dir,
+        outputs, bbox_quality = single_gpu_test(model, data_loader, args.show, args.show_dir,
                                   args.show_score_thr)
     else:
         model = MMDistributedDataParallel(
@@ -213,7 +213,7 @@ def main():
             ]:
                 eval_kwargs.pop(key, None)
             eval_kwargs.update(dict(metric=args.eval, **kwargs))
-            print(dataset.evaluate(outputs, **eval_kwargs))
+            print(dataset.evaluate(outputs, bbox_quality, **eval_kwargs))
 
 
 if __name__ == '__main__':

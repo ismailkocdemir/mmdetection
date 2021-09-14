@@ -143,8 +143,8 @@ class EvalHook(Hook):
         if not self.by_epoch or not self.evaluation_flag(runner):
             return
         from mmdet.apis import single_gpu_test
-        results = single_gpu_test(runner.model, self.dataloader, show=False)
-        key_score = self.evaluate(runner, results)
+        results, bbox_quality = single_gpu_test(runner.model, self.dataloader, show=False)
+        key_score = self.evaluate(runner, results, bbox_quality)
         if self.save_best:
             self.save_best_checkpoint(runner, key_score)
 
@@ -152,8 +152,8 @@ class EvalHook(Hook):
         if self.by_epoch or not self.every_n_iters(runner, self.interval):
             return
         from mmdet.apis import single_gpu_test
-        results = single_gpu_test(runner.model, self.dataloader, show=False)
-        key_score = self.evaluate(runner, results)
+        results, bbox_quality = single_gpu_test(runner.model, self.dataloader, show=False)
+        key_score = self.evaluate(runner, results, bbox_quality)
         if self.save_best:
             self.save_best_checkpoint(runner, key_score)
 
@@ -172,9 +172,9 @@ class EvalHook(Hook):
             self.logger.info(f'Now best checkpoint is epoch_{time_stamp}.pth.'
                              f'Best {self.key_indicator} is {best_score:0.4f}')
 
-    def evaluate(self, runner, results):
+    def evaluate(self, runner, results, bbox_quality):
         eval_res = self.dataloader.dataset.evaluate(
-            results, logger=runner.logger, **self.eval_kwargs)
+            results, bbox_quality, logger=runner.logger, **self.eval_kwargs)
         for name, val in eval_res.items():
             runner.log_buffer.output[name] = val
         runner.log_buffer.ready = True

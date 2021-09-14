@@ -25,13 +25,17 @@ class BasicBlock(BaseModule):
                  norm_cfg=dict(type='BN'),
                  dcn=None,
                  plugins=None,
-                 init_cfg=None):
+                 init_cfg=None,
+                 no_norm=False):
         super(BasicBlock, self).__init__(init_cfg)
         assert dcn is None, 'Not implemented yet.'
         assert plugins is None, 'Not implemented yet.'
 
-        self.norm1_name, norm1 = build_norm_layer(norm_cfg, planes, postfix=1)
-        self.norm2_name, norm2 = build_norm_layer(norm_cfg, planes, postfix=2)
+        self.no_norm = no_norm
+
+        if not self.no_norm:
+            self.norm1_name, norm1 = build_norm_layer(norm_cfg, planes, postfix=1)
+            self.norm2_name, norm2 = build_norm_layer(norm_cfg, planes, postfix=2)
 
         self.conv1 = build_conv_layer(
             conv_cfg,
@@ -42,10 +46,15 @@ class BasicBlock(BaseModule):
             padding=dilation,
             dilation=dilation,
             bias=False)
-        self.add_module(self.norm1_name, norm1)
+       
+        if not self.no_norm:
+            self.add_module(self.norm1_name, norm1)
+        
         self.conv2 = build_conv_layer(
             conv_cfg, planes, planes, 3, padding=1, bias=False)
-        self.add_module(self.norm2_name, norm2)
+        
+        if not self.no_norm:
+            self.add_module(self.norm2_name, norm2)
 
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
@@ -56,11 +65,15 @@ class BasicBlock(BaseModule):
     @property
     def norm1(self):
         """nn.Module: normalization layer after the first convolution layer"""
+        if self.no_norm:
+            return None
         return getattr(self, self.norm1_name)
 
     @property
     def norm2(self):
         """nn.Module: normalization layer after the second convolution layer"""
+        if self.no_norm:
+            return None
         return getattr(self, self.norm2_name)
 
     def forward(self, x):
@@ -70,11 +83,13 @@ class BasicBlock(BaseModule):
             identity = x
 
             out = self.conv1(x)
-            out = self.norm1(out)
+            if not self.no_norm:
+                out = self.norm1(out)
             out = self.relu(out)
 
             out = self.conv2(out)
-            out = self.norm2(out)
+            if not self.no_norm:
+                out = self.norm2(out)
 
             if self.downsample is not None:
                 identity = self.downsample(x)
@@ -108,7 +123,8 @@ class Bottleneck(BaseModule):
                  norm_cfg=dict(type='BN'),
                  dcn=None,
                  plugins=None,
-                 init_cfg=None):
+                 init_cfg=None,
+                 no_norm=False):
         """Bottleneck block for ResNet.
 
         If style is "pytorch", the stride-two layer is the 3x3 conv layer, if
@@ -134,6 +150,7 @@ class Bottleneck(BaseModule):
         self.with_dcn = dcn is not None
         self.plugins = plugins
         self.with_plugins = plugins is not None
+        self.no_norm = no_norm
 
         if self.with_plugins:
             # collect plugins for conv1/conv2/conv3
@@ -157,10 +174,11 @@ class Bottleneck(BaseModule):
             self.conv1_stride = stride
             self.conv2_stride = 1
 
-        self.norm1_name, norm1 = build_norm_layer(norm_cfg, planes, postfix=1)
-        self.norm2_name, norm2 = build_norm_layer(norm_cfg, planes, postfix=2)
-        self.norm3_name, norm3 = build_norm_layer(
-            norm_cfg, planes * self.expansion, postfix=3)
+        if not self.no_norm:
+            self.norm1_name, norm1 = build_norm_layer(norm_cfg, planes, postfix=1)
+            self.norm2_name, norm2 = build_norm_layer(norm_cfg, planes, postfix=2)
+            self.norm3_name, norm3 = build_norm_layer(
+                norm_cfg, planes * self.expansion, postfix=3)
 
         self.conv1 = build_conv_layer(
             conv_cfg,
@@ -169,7 +187,8 @@ class Bottleneck(BaseModule):
             kernel_size=1,
             stride=self.conv1_stride,
             bias=False)
-        self.add_module(self.norm1_name, norm1)
+        if not self.no_norm:
+            self.add_module(self.norm1_name, norm1)
         fallback_on_stride = False
         if self.with_dcn:
             fallback_on_stride = dcn.pop('fallback_on_stride', False)
@@ -194,15 +213,17 @@ class Bottleneck(BaseModule):
                 padding=dilation,
                 dilation=dilation,
                 bias=False)
-
-        self.add_module(self.norm2_name, norm2)
+        if not self.no_norm:
+            self.add_module(self.norm2_name, norm2)
         self.conv3 = build_conv_layer(
             conv_cfg,
             planes,
             planes * self.expansion,
             kernel_size=1,
             bias=False)
-        self.add_module(self.norm3_name, norm3)
+        
+        if not self.no_norm:
+            self.add_module(self.norm3_name, norm3)
 
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
@@ -265,21 +286,24 @@ class Bottleneck(BaseModule):
         def _inner_forward(x):
             identity = x
             out = self.conv1(x)
-            out = self.norm1(out)
+            if not self.no_norm:
+                out = self.norm1(out)
             out = self.relu(out)
 
             if self.with_plugins:
                 out = self.forward_plugin(out, self.after_conv1_plugin_names)
 
             out = self.conv2(out)
-            out = self.norm2(out)
+            if not self.no_norm:
+                out = self.norm2(out)
             out = self.relu(out)
 
             if self.with_plugins:
                 out = self.forward_plugin(out, self.after_conv2_plugin_names)
 
             out = self.conv3(out)
-            out = self.norm3(out)
+            if not self.no_norm:
+                out = self.norm3(out)
 
             if self.with_plugins:
                 out = self.forward_plugin(out, self.after_conv3_plugin_names)
@@ -387,7 +411,8 @@ class ResNet(BaseModule):
                  with_cp=False,
                  zero_init_residual=True,
                  pretrained=None,
-                 init_cfg=None):
+                 init_cfg=None,
+                 no_norm=False):
         super(ResNet, self).__init__(init_cfg)
         self.zero_init_residual = zero_init_residual
         if depth not in self.arch_settings:
@@ -452,6 +477,7 @@ class ResNet(BaseModule):
         self.block, stage_blocks = self.arch_settings[depth]
         self.stage_blocks = stage_blocks[:num_stages]
         self.inplanes = stem_channels
+        self.no_norm = no_norm
 
         self._make_stem_layer(in_channels, stem_channels)
 
@@ -479,7 +505,8 @@ class ResNet(BaseModule):
                 norm_cfg=norm_cfg,
                 dcn=dcn,
                 plugins=stage_plugins,
-                init_cfg=block_init_cfg)
+                init_cfg=block_init_cfg,
+                no_norm=self.no_norm)
             self.inplanes = planes * self.block.expansion
             layer_name = f'layer{i + 1}'
             self.add_module(layer_name, res_layer)
@@ -559,6 +586,8 @@ class ResNet(BaseModule):
     @property
     def norm1(self):
         """nn.Module: the normalization layer named "norm1" """
+        if self.no_norm:
+            return None
         return getattr(self, self.norm1_name)
 
     def _make_stem_layer(self, in_channels, stem_channels):
@@ -603,9 +632,10 @@ class ResNet(BaseModule):
                 stride=2,
                 padding=3,
                 bias=False)
-            self.norm1_name, norm1 = build_norm_layer(
-                self.norm_cfg, stem_channels, postfix=1)
-            self.add_module(self.norm1_name, norm1)
+            if not self.no_norm:
+                self.norm1_name, norm1 = build_norm_layer(
+                    self.norm_cfg, stem_channels, postfix=1)
+                self.add_module(self.norm1_name, norm1)
             self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
@@ -616,8 +646,11 @@ class ResNet(BaseModule):
                 for param in self.stem.parameters():
                     param.requires_grad = False
             else:
-                self.norm1.eval()
-                for m in [self.conv1, self.norm1]:
+                m_list = [self.conv1]
+                if not self.no_norm:
+                    self.norm1.eval()
+                    m_list.append(self.norm1)
+                for m in m_list:
                     for param in m.parameters():
                         param.requires_grad = False
 
@@ -633,7 +666,8 @@ class ResNet(BaseModule):
             x = self.stem(x)
         else:
             x = self.conv1(x)
-            x = self.norm1(x)
+            if not self.no_norm:
+                x = self.norm1(x)
             x = self.relu(x)
         x = self.maxpool(x)
         outs = []

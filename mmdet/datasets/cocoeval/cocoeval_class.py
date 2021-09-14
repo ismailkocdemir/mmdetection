@@ -863,9 +863,9 @@ class Params:
             .87, .87, .89, .89
         ]) / 10.0
 
-    def __init__(self, iouType='segm', bbox_metric="area", exp_name="exp_def"):
+    def __init__(self, iouType='segm', bbox_metric="area", exp_name="default-exp", bbox_intervals=None, use_cityscapes=False):
         if iouType == 'segm' or iouType == 'bbox':
-            self.setDetParams(bbox_metric, exp_name)
+            self.setDetParams(bbox_metric, exp_name, bbox_intervals, use_cityscapes)
         elif iouType == 'keypoints':
             self.setKpParams()
         else:
