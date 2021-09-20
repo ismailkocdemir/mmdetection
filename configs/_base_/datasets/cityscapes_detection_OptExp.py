@@ -5,7 +5,6 @@ img_norm_cfg = dict(
     mean=[51.57563733, 56.56139993, 51.88684484],
     std=[31.34092065, 32.66129945, 31.04255947],
     to_rgb=False)
-
 train_pipeline = [
     dict(type='LoadImageFromFile', to_float32=True),
     dict(type='LoadAnnotations', with_bbox=True),

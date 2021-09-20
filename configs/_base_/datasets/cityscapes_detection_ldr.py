@@ -6,7 +6,7 @@ img_norm_cfg = dict(
     std=[54.0184788, 55.6685181, 52.551252 ],
     to_rgb=False)
 train_pipeline = [
-    dict(type='LoadImageFromFile', to_float32=True, hdr=True),
+    dict(type='LoadImageFromFile', to_float32=True),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(
         type='MinIoURandomCrop',
@@ -20,7 +20,7 @@ train_pipeline = [
     dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFile', to_float32=True, hdr=True),
+    dict(type='LoadImageFromFile', to_float32=True),
     dict(
         type='MultiScaleFlipAug',
         img_scale=(1024, 512),
