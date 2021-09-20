@@ -1,8 +1,7 @@
 _base_ = [
     '../retinanet_r50_fpn_1x_coco.py',
-    '../../_base_/datasets/hdr_detection_absolute.py',
+    '../../_base_/datasets/hdr_detection_16.py',
 ]
-
 
 # optimizer
 # lr is set for a batch size of 8
