@@ -777,8 +777,97 @@ def create_GT_object_mask(data_folder):
                         ),
                         mask
             )
-            
+
+def min_max(img_folder):
+
+    min_val = np.array([1000.0, 1000.0, 1000.0])
+    max_val = np.array([0.0, 0.0, 0.0])
+
+    # loop through images
+    idx = 0
+    for r, d, f in os.walk(img_folder):
+        for _file in f:
+            try:
+                image_path = os.path.join(r, _file)
+                image = cv2.imread(image_path, cv2.IMREAD_COLOR + cv2.IMREAD_ANYDEPTH).astype(np.float32)
+               
+               
+                immin = np.amin(image, axis=(0,1))
+                immax = np.amax(image, axis=(0,1))
+
+                max_val = np.maximum(immax, max_val)
+                min_val = np.minimum(immin, min_val)
+
+                if idx % 100 == 0:
+                    print(idx, end='\r')
+                idx += 1
+            except Exception as e:
+                print(e)
+                idx += 1
+                continue
+
+    ####### FINAL CALCULATIONS
+
+    print(img_folder)
+    print("min", min_val)
+    print("max", max_val)
+
+
+
+def calc_mean_var(img_folder, annotation_file, gamma_enc=False):
     
+    psum    = np.array([0.0, 0.0, 0.0])
+    psum_sq = np.array([0.0, 0.0, 0.0])
+    idx = 0
+    count = 0
+
+    anno_data = None
+    with open(annotation_file) as json_data:
+        anno_data = json.load(json_data)
+        json_data.close()
+
+    image_info = anno_data["images"]
+
+    min_val = np.array([-326.18847656,  -20.07397461,  -62.65344238])
+    max_val = np.array([64033.875, 64785.125, 65504.])
+
+    idx = 0
+    for curr_image in image_info:
+        image_path = os.path.join(img_folder, curr_image["file_name"])
+        try:
+            image = cv2.imread(image_path, cv2.IMREAD_COLOR + cv2.IMREAD_ANYDEPTH).astype(np.float32)
+            
+            if gamma_enc:
+                image = (image-min_val) / (max_val-min_val)
+                np.clip(image, 0,1)
+                image = image ** 0.454545
+
+            psum    = psum + image.sum(axis=(0,1))
+            psum_sq = psum_sq + (image * image).sum(axis = (0, 1))
+            count += (image.shape[0] * image.shape[1])
+
+            if idx % 100 == 0:
+                print(idx, end='\r')
+            idx += 1
+        except Exception as e:
+            print(e)
+            idx += 1
+            continue
+
+    ####### FINAL CALCULATIONS
+
+    # mean and std
+    total_mean = psum / count
+    total_var  = (psum_sq / count) - (total_mean ** 2)
+    total_std  = np.sqrt(total_var)
+
+    # output
+    print(img_folder)
+    print("mean", total_mean)
+    print("std", total_std)
+    print("var", total_var)
+
+
 
 if __name__ == "__main__":
     #filter_dataset()
@@ -789,6 +878,7 @@ if __name__ == "__main__":
 
     data_folder = str(sys.argv[1])
     #main_resize(data_folder)
-    main_bbox(data_folder, annotate=True)
+    #main_bbox(data_folder, annotate=True)
     #create_GT_object_mask(data_folder)
     #main_image(data_folder, annotate=True)
+    calc_mean_var(data_folder, '/truba/home/ikocdemir/data/HDR4RTT/0_RESIZED/annotations/instances_train2020_reduced.json', True)

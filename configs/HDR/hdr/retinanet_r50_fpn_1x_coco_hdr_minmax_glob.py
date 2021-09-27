@@ -1,11 +1,13 @@
 _base_ = [
-    '../faster_rcnn_r50_fpn.py',
-    '../../_base_/datasets/hdr_detection_absolute_normalize.py',
+    '../retinanet_r50_fpn_1x_coco.py',
+    '../../_base_/datasets/hdr_detection_minmax_glob.py',
 ]
-'''
+
+
 # optimizer
 # lr is set for a batch size of 8
 optimizer = dict(type='SGD', lr=0.001, momentum=0.9, weight_decay=0.0001)
+optimizer_config = dict(grad_clip=None) # dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
     policy='step',
@@ -15,4 +17,3 @@ lr_config = dict(
     step=[8])
 runner = dict(
     type='EpochBasedRunner', max_epochs=12)
-'''

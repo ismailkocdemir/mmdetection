@@ -43,7 +43,13 @@ class LoadImageFromFile(object):
                  hdr=False,
                  aligned_hdr=False,
                  load_mask = False,
-                 hdr_depth=32):
+                 hdr_depth=32,
+                 min_max_norm=False,
+                 min_val=None,
+                 max_val=None,
+                 gamma=False,
+                 rescale=False
+                 ):
         self.to_float32 = to_float32
         self.color_type = color_type
         self.file_client_args = file_client_args.copy()
@@ -52,6 +58,12 @@ class LoadImageFromFile(object):
         self.hdr_depth = hdr_depth
         self.aligned_hdr = aligned_hdr
         self.load_mask = load_mask
+        self.min_max_norm = min_max_norm
+        self.min_val = min_val
+        self.max_val = max_val
+        self.rescale = rescale
+        self.gamma = gamma
+
 
     def __call__(self, results):
         """Call functions to load image and get image meta information.
@@ -78,15 +90,39 @@ class LoadImageFromFile(object):
         if self.hdr:
             flag += cv2.IMREAD_ANYDEPTH
         
-        img = cv2.imread(filename, flag)
-        
-        if self.to_float32:
-            if self.hdr_depth == 16:
-                img = img.astype(np.float16)
-            elif self.hdr_depth == 64:
-                img = img.astype(np.float64)
-            else:
-                img = img.astype(np.float32)
+        try:
+            img = cv2.imread(filename, flag)
+            
+            if self.to_float32 or self.hdr or self.aligned_hdr or self.min_max_norm or self.gamma:
+                if self.hdr_depth == 16:
+                    img = img.astype(np.float16)
+                elif self.hdr_depth == 64:
+                    img = img.astype(np.float64)
+                else:
+                    img = img.astype(np.float32)
+
+            if self.min_max_norm:
+                img_min = 0.0
+                img_max = 1.0
+                if self.min_val is None or self.max_val is None:
+                    img_min = np.amin(img, axis=(0,1))
+                    img_max = np.amax(img, axis=(0,1))
+                else:
+                    img_min = np.array(self.min_val)
+                    img_max = np.array(self.max_val)
+                
+                img = (img - img_min) / (img_max - img_min)
+                np.clip(img, 0,1)
+
+                if self.gamma:
+                    img = img ** 0.454545
+
+                if self.rescale:
+                    img = img * 255.0
+            
+        except:
+            print("Error reading the file:", filename)
+            raise
 
         results['filename'] = filename
         results['ori_filename'] = results['img_info']['filename']
@@ -97,14 +133,13 @@ class LoadImageFromFile(object):
             flag += cv2.IMREAD_ANYDEPTH
             hdr_filename = self.get_hdr_filename(filename)
             img_hdr = cv2.imread(hdr_filename, flag)
-
-            if self.to_float32:
-                if self.hdr_depth == 16:
-                    img = img.astype(np.float16)
-                elif self.hdr_depth == 64:
-                    img = img.astype(np.float64)
-                else:
-                    img = img.astype(np.float32)
+        
+            if self.hdr_depth == 16:
+                img = img.astype(np.float16)
+            elif self.hdr_depth == 64:
+                img = img.astype(np.float64)
+            else:
+                img = img.astype(np.float32)
 
             results['img_HDR'] = img_hdr
             results['img_fields'].append('img_HDR')
@@ -116,16 +151,6 @@ class LoadImageFromFile(object):
             results['mask'] = mask
             results['seg_fields'] = ['mask']
       
-        '''
-        if not self.aligned_hdr:
-            results['img'] = img
-        else:
-            mid_point = img.shape[1] // 2
-            results['img_HDR'] = img[:, :mid_point, :]
-            results['img'] = img[:, mid_point:, :]
-            results['img_fields'].append('img_HDR')
-        '''
-
         results['img_shape'] = results['img'].shape
         results['ori_shape'] = results['img'].shape            
         return results

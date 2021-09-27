@@ -65,19 +65,19 @@ data = dict(
         dataset=dict(
             type=dataset_type,
             ann_file=data_root +
-            'annotations/instances_train2020_reduced.json',
+            'annotations/instances_train2020_reduced_TMO.json',
             img_prefix=data_root + 'images_LDR/',
             pipeline=train_pipeline)),
     val=dict(
         type=dataset_type,
         ann_file=data_root +
-        'annotations/instances_test2020_reduced.json',
+        'annotations/instances_test2020_reduced_TMO.json',
         img_prefix=data_root + 'images_LDR/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         ann_file=data_root +
-        'annotations/instances_test2020_reduced.json',
+        'annotations/instances_test2020_reduced_TMO.json',
         img_prefix=data_root + 'images_LDR/',
         pipeline=test_pipeline),
     reference_HDR=dict(
