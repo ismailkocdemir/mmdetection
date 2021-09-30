@@ -709,6 +709,24 @@ def make_val_split(data_folder, copy_folders=False):
     split_anno(os.path.join(data_folder, "annotations_8bit"))
     split_anno(os.path.join(data_folder, "annotations_16bit"))
 
+    gt_folder = os.path.join(data_folder, "gtFine")
+    train_path = os.path.join(gt_folder, 'train') 
+    val_path = os.path.join(gt_folder, 'val')
+    test_path = os.path.join(gt_folder, 'test')
+    test_path_orig = os.path.join(gt_folder, 'test_orig') 
+
+    move(test_path, test_path_orig)
+    move(val_path, test_path)
+
+    os.makedirs(val_path)
+
+    for city in ["stuttgart", "ulm", "bochum"]:
+        city_source = os.path.join(train_path, city)
+        city_dest = os.path.join(val_path, city)
+
+        move(city_source, city_dest)
+
+
     if copy_folders:
         #folders = ["leftImg8bit", "leftImg16bit","leftImg16bitGamma", "leftImgDurand", "leftImgFattal", "leftImgMantiuk", "leftImgOptExp", "leftImgReinhardGlobal", "leftImgReinhardLocal"]
         folders = ["leftImgDurand", "leftImgFattal", "leftImgMantiuk", "leftImgOptExp", "leftImgReinhardGlobal", "leftImgReinhardLocal"]
@@ -770,6 +788,7 @@ def calc_mean_var(img_folder):
     print("mean", total_mean)
     print("std", total_std)
     print("var", total_var)
+    print("==================")
 
 
 
@@ -781,5 +800,6 @@ if __name__ == "__main__":
 
     data_folder = str(sys.argv[1])
     #make_val_split(data_folder)
-    main_bbox(data_folder, annotate=True, skip_train=False)
+    #main_bbox(data_folder, annotate=True, skip_train=False)
     #main_image(data_folder, annotate=True)
+    calc_mean_var(data_folder)

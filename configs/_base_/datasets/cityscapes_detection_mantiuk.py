@@ -2,8 +2,8 @@
 dataset_type = 'CityscapesDataset'
 data_root = '/home/ihakki/h3dr/data/cityscapes/'
 img_norm_cfg = dict(
-    mean = [72.17784757, 82.67909294, 73.02791729],
-    std = [47.6674435,  48.42545605, 47.58948543],
+    mean = [73.32089887, 80.54264236, 73.80700724],
+    std = [44.39102903, 46.83312552, 44.22370554],
     to_rgb=False)
 train_pipeline = [
     dict(type='LoadImageFromFile', to_float32=True),
@@ -43,19 +43,19 @@ data = dict(
         dataset=dict(
             type=dataset_type,
             ann_file=data_root +
-            'annotations_8bit/instancesonly_filtered_gtFine_train.json',
-            img_prefix=data_root + 'leftImg8bit/train/',
+            'annotations_16bit/instancesonly_filtered_gtFine_train.json',
+            img_prefix=data_root + 'leftImgMantiuk/train/',
             pipeline=train_pipeline)),
     val=dict(
         type=dataset_type,
         ann_file=data_root +
-        'annotations_8bit/instancesonly_filtered_gtFine_val.json',
-        img_prefix=data_root + 'leftImg8bit/val/',
+        'annotations_16bit/instancesonly_filtered_gtFine_val.json',
+        img_prefix=data_root + 'leftImgMantiuk/val/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         ann_file=data_root +
-        'annotations_8bit/instancesonly_filtered_gtFine_test.json',
-        img_prefix=data_root + 'leftImg8bit/test/',
+        'annotations_16bit/instancesonly_filtered_gtFine_test.json',
+        img_prefix=data_root + 'leftImgMantiuk/test/',
         pipeline=test_pipeline))
 evaluation = dict(interval=1, metric='bbox')

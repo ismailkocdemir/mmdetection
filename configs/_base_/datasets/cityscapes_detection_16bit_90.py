@@ -2,11 +2,11 @@
 dataset_type = 'CityscapesDataset'
 data_root = '/home/ihakki/h3dr/data/cityscapes/'
 img_norm_cfg = dict(
-    mean = [72.17784757, 82.67909294, 73.02791729],
-    std = [47.6674435,  48.42545605, 47.58948543],
+    mean=[2139.37329915, 2539.70582847, 2125.19912017],
+    std=[3566.50640495, 3868.26485891, 3315.95306845],
     to_rgb=False)
 train_pipeline = [
-    dict(type='LoadImageFromFile', to_float32=True),
+    dict(type='LoadImageFromFile', to_float32=True, hdr=True),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(
         type='MinIoURandomCrop',
@@ -20,7 +20,7 @@ train_pipeline = [
     dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFile', to_float32=True),
+    dict(type='LoadImageFromFile', to_float32=True, hdr=True),
     dict(
         type='MultiScaleFlipAug',
         img_scale=(1024, 512),
@@ -43,19 +43,19 @@ data = dict(
         dataset=dict(
             type=dataset_type,
             ann_file=data_root +
-            'annotations_8bit/instancesonly_filtered_gtFine_train.json',
-            img_prefix=data_root + 'leftImg8bit/train/',
+            'annotations_90/instancesonly_filtered_gtFine_train.json',
+            img_prefix=data_root + 'leftImg16bit/train/',
             pipeline=train_pipeline)),
     val=dict(
         type=dataset_type,
         ann_file=data_root +
-        'annotations_8bit/instancesonly_filtered_gtFine_val.json',
-        img_prefix=data_root + 'leftImg8bit/val/',
+        'annotations_90/instancesonly_filtered_gtFine_val.json',
+        img_prefix=data_root + 'leftImg16bit/val/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         ann_file=data_root +
-        'annotations_8bit/instancesonly_filtered_gtFine_test.json',
-        img_prefix=data_root + 'leftImg8bit/test/',
+        'annotations_90/instancesonly_filtered_gtFine_test.json',
+        img_prefix=data_root + 'leftImg16bit/test/',
         pipeline=test_pipeline))
 evaluation = dict(interval=1, metric='bbox')
