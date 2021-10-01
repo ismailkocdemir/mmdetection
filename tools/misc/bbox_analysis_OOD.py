@@ -229,6 +229,21 @@ def get_histogram_entropy(image, remove_outliers=True, m=3.):
 
     return _ent
 
+def plot_histogram(image, save_path = None):
+    _image = image.copy()
+  
+    bins =  np.linspace(0.0,1.0, 2**8)
+    plt.clf()
+    hist_list = plt.hist(_image.flatten(), bins=bins)
+
+    plt.xlabel('luminance')
+    plt.ylabel('frequency')
+    plt.grid(True)
+    
+    if save_path:
+        plt.savefig(save_path)
+
+
 def get_avg_luminance(image):
     return np.mean(image)
 
@@ -828,26 +843,50 @@ def calc_mean_var(img_folder, annotation_file, gamma_enc=False):
 
     image_info = anno_data["images"]
 
-    min_val = np.array([-326.18847656,  -20.07397461,  -62.65344238])
-    max_val = np.array([64033.875, 64785.125, 65504.])
+    #min_val = np.array([-326.18847656, -20.07397461, -62.65344238])
+    #max_val = np.array([64033.875, 64785.125, 65504.])
 
     idx = 0
     for curr_image in image_info:
         image_path = os.path.join(img_folder, curr_image["file_name"])
         try:
             image = cv2.imread(image_path, cv2.IMREAD_COLOR + cv2.IMREAD_ANYDEPTH).astype(np.float32)
+            min_val = np.amin(image, axis=(0,1))
+            max_val = np.amax(image, axis=(0,1))
+            image = (image-min_val) / (max_val-min_val)
             
+            is_nan = (image != image).any()
+            if is_nan:
+                print("NaN before gamma:", is_nan)
+                print("image:", curr_image["file_name"])
+
+            gray = convert_to_gray(image)
+            plot_histogram(image, curr_image["file_name"].replace('.exr', '_hist_beforeGamma.png'))            
+
             if gamma_enc:
-                image = (image-min_val) / (max_val-min_val)
                 image = image ** 0.454545
-                image *= 65535.0
+            
+            is_nan = (image != image).any()
+            if is_nan:
+                print("NaN after gamma:", is_nan)
+                print("image:", curr_image["file_name"])
+
+            gray = convert_to_gray(image)
+            plot_histogram(image, curr_image["file_name"].replace('.exr', '_hist_afterGamma.png'))
+            
+            #image *= 65535.0
 
             psum    = psum + image.sum(axis=(0,1))
             psum_sq = psum_sq + (image * image).sum(axis = (0, 1))
             count += (image.shape[0] * image.shape[1])
 
-            if idx % 100 == 0:
-                print(idx, end='\r')
+            # for debugging
+            if idx == 10:
+                break
+            
+            print(idx)
+            #if idx % 100 == 0:
+            #    print(idx, end='\r')
             idx += 1
         except Exception as e:
             print(e)
@@ -876,8 +915,4 @@ if __name__ == "__main__":
         sys.exit()
 
     data_folder = str(sys.argv[1])
-    #main_resize(data_folder)
-    #main_bbox(data_folder, annotate=True)
-    #create_GT_object_mask(data_folder)
-    #main_image(data_folder, annotate=True)
-    calc_mean_var(data_folder, '/truba/home/ikocdemir/data/HDR4RTT/0_RESIZED/annotations/instances_train2020_reduced.json', True)
+    calc_mean_var(data_folder, '/HDD/H3DR/HDR4RTT/0_RESIZED/annotations/instances_train2020_reduced.json', True)
