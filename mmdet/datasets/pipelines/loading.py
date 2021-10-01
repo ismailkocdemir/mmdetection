@@ -48,7 +48,7 @@ class LoadImageFromFile(object):
                  min_val=None,
                  max_val=None,
                  gamma=False,
-                 rescale=False
+                 rescale=None
                  ):
         self.to_float32 = to_float32
         self.color_type = color_type
@@ -112,13 +112,13 @@ class LoadImageFromFile(object):
                     img_max = np.array(self.max_val)
                 
                 img = (img - img_min) / (img_max - img_min)
-                np.clip(img, 0,1)
 
                 if self.gamma:
                     img = img ** 0.454545
 
                 if self.rescale:
-                    img = img * 255.0
+                    img = img * float(self.rescale)
+            
             
         except:
             print("Error reading the file:", filename)

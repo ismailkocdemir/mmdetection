@@ -839,8 +839,8 @@ def calc_mean_var(img_folder, annotation_file, gamma_enc=False):
             
             if gamma_enc:
                 image = (image-min_val) / (max_val-min_val)
-                np.clip(image, 0,1)
                 image = image ** 0.454545
+                image *= 65535.0
 
             psum    = psum + image.sum(axis=(0,1))
             psum_sq = psum_sq + (image * image).sum(axis = (0, 1))
@@ -862,10 +862,9 @@ def calc_mean_var(img_folder, annotation_file, gamma_enc=False):
     total_std  = np.sqrt(total_var)
 
     # output
-    print(img_folder)
+    print(img_folder, gamma_enc)
     print("mean", total_mean)
     print("std", total_std)
-    print("var", total_var)
 
 
 

@@ -8,7 +8,7 @@ img_norm_cfg = dict(
 min_max_config = dict(
     min_val=[-326.18848, -20.073975, -62.653442],
     max_val=[64033.875, 64785.125, 65504.0],
-    rescale=True
+    rescale=255.0
 )
 train_pipeline = [
     dict(type='LoadImageFromFile', hdr=True, min_max_norm=True, **min_max_config),

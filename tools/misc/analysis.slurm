@@ -15,11 +15,5 @@
 source ~/.bashrc
 conda activate romer-gpu
 
-#python -u bbox_analysis_OOD.py /truba/home/ikocdemir/data/HDR4RTT/0_RESIZED/images/
-python -u ../dataset_converters/cityscapes_extended.py /home/ihakki/h3dr/data/cityscapes --img-dir leftImg16bit -o annotations_50 -r 0.5
-python -u ../dataset_converters/cityscapes_extended.py /home/ihakki/h3dr/data/cityscapes --img-dir leftImg16bit -o annotations_60 -r 0.6
-python -u ../dataset_converters/cityscapes_extended.py /home/ihakki/h3dr/data/cityscapes --img-dir leftImg16bit -o annotations_70 -r 0.7
-python -u ../dataset_converters/cityscapes_extended.py /home/ihakki/h3dr/data/cityscapes --img-dir leftImg16bit -o annotations_80 -r 0.8
-python -u ../dataset_converters/cityscapes_extended.py /home/ihakki/h3dr/data/cityscapes --img-dir leftImg16bit -o annotations_90 -r 0.9
-
+python -u bbox_analysis_OOD.py /truba/home/ikocdemir/data/HDR4RTT/0_RESIZED/images/
 
