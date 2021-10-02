@@ -6,12 +6,14 @@ img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
     
 min_max_config = dict(
+    min_max_norm=True,
     min_val=[-326.18848, -20.073975, -62.653442],
     max_val=[64033.875, 64785.125, 65504.0],
     rescale=255.0
 )
+
 train_pipeline = [
-    dict(type='LoadImageFromFile', hdr=True, min_max_norm=True, **min_max_config),
+    dict(type='LoadImageFromFile', hdr=True, **min_max_config),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(type='RandomFlip', flip_ratio=0.5),
     #dict(type='RandomCrop', crop_size=[0.5, 0.5], crop_type='relative_range'),
@@ -26,7 +28,7 @@ train_pipeline = [
     dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels']),
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFile', hdr=True, min_max_norm=True, **min_max_config),
+    dict(type='LoadImageFromFile', hdr=True, **min_max_config),
     dict(
         type='MultiScaleFlipAug',
         img_scale=(1024, 576),

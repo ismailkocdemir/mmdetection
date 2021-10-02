@@ -1,6 +1,6 @@
 _base_ = [
     '../retinanet_r50_fpn_1x_coco.py',
-    '../../_base_/datasets/hdr_detection_minmax_glob.py',
+    '../../_base_/datasets/hdr_detection_minmax_gamma.py',
 ]
 
 

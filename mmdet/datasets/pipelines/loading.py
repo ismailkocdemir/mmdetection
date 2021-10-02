@@ -101,7 +101,7 @@ class LoadImageFromFile(object):
                 else:
                     img = img.astype(np.float32)
 
-            if self.min_max_norm:
+            if self.min_max_norm or self.gamma:
                 img_min = 0.0
                 img_max = 1.0
                 if self.min_val is None or self.max_val is None:

@@ -7,8 +7,6 @@ img_norm_cfg = dict(
     
 min_max_config = dict(
     min_max_norm=True,
-    min_val=[-326.18848, -20.073975, -62.653442],
-    max_val=[64033.875, 64785.125, 65504.0],
     gamma=True,
     rescale=65535.0
 )

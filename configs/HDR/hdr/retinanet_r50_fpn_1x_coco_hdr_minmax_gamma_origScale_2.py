@@ -1,6 +1,6 @@
 _base_ = [
     '../retinanet_r50_fpn_1x_coco.py',
-    '../../_base_/datasets/hdr_detection_minmax_glob.py',
+    '../../_base_/datasets/hdr_detection_minmax_gamma_origScale.py',
 ]
 
 
@@ -14,6 +14,6 @@ lr_config = dict(
     warmup='linear',
     warmup_iters=500,
     warmup_ratio=0.001,
-    step=[10])
+    step=[12])
 runner = dict(
-    type='EpochBasedRunner', max_epochs=20)
+    type='EpochBasedRunner', max_epochs=16)

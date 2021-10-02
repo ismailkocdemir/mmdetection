@@ -6,6 +6,7 @@ img_norm_cfg = dict(
     mean=[0.04894935, 0.03381687, 0.09385127], std=[0.02396633, 0.0240463, 0.0187165], to_rgb=True)
 
 min_max_config = dict(
+    min_max_norm=True,
     min_val=[-326.18848, -20.073975, -62.653442],
     max_val=[64033.875, 64785.125, 65504.0],
     gamma=True,
