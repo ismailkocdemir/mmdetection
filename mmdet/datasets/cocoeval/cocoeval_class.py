@@ -698,12 +698,14 @@ class COCOeval:
                                         ,'w'
                                     )
                                 )
+                        '''
                         json.dump({"ap": stats[10:21:3].tolist()}, 
                                 open("{}_{}_common.txt".format(
                                     self.exp_name, self.bbox_metric),'w'))
                         json.dump({"ap": stats[11:21:3].tolist()}, 
                                 open("{}_{}_rare.txt".format(
                                     self.exp_name, self.bbox_metric),'w'))
+                        '''
             return stats
 
         def _summarizeKps():

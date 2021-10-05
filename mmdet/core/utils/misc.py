@@ -49,7 +49,7 @@ def entropy_stable(values):
     values_stable = (values - values.min()) + 1e-10
     return entropy_scipy(values_stable)
 
-def get_histogram_entropy(image, remove_outliers=True, m=3.):
+def get_histogram_entropy(image, remove_outliers=True, m=3., hdr_type='OOD'):
     _image = image.copy()
 
     if remove_outliers:
@@ -57,7 +57,8 @@ def get_histogram_entropy(image, remove_outliers=True, m=3.):
     
     #_image = np.log2(_image + 1e-8)
     
-    bins =  np.linspace(0.0,1.0, 2**16) #'sqrt'
+    bin_count = 64 if hdr_type == 'cityscapes' else 2**16
+    bins =  np.linspace(0.0,1.0, bin_count) #'sqrt'
     hist, _ = np.histogram(_image.flatten(), bins=bins, density=True)
     _ent = entropy_stable(hist)
 
@@ -72,7 +73,7 @@ def get_avg_log_luminance(image, remove_outliers=False, m=3.):
         _image = remove_outliers_from_image(_image, m)
     return np.exp(np.mean( np.log(_image + 1e-6) ))
 
-def calculate_bbox_metric(tensor, metas, result, bbox_metric='entropy', out_dir=None, model=None):
+def calculate_bbox_metric(tensor, metas, result, bbox_metric='entropy', out_dir=None, model=None, hdr_type="OOD"):
     assert bbox_metric in ["entropy", "drange", "lumin"], "Undefiend bbox quality metric: {}".format(bbox_metric)
     num_imgs = tensor.size(0)
     np.seterr('raise')
@@ -104,12 +105,20 @@ def calculate_bbox_metric(tensor, metas, result, bbox_metric='entropy', out_dir=
                 score_thr=0.5)
         '''
         
-        min_val = -326.18848 #-12.278792
-        max_val = 65504.0 #69482.45
-        image = (image - min_val) / (max_val - min_val)
-        image = 0.2126*image[:,:,2] + 0.7152*image[:,:,1] + 0.0722*image[:,:,0]
-        image = remove_outliers_from_image(image)
-        
+        if hdr_type == "ODD":
+            min_val = -326.18848 #-12.278792
+            max_val = 65504.0 #69482.45
+            image = (image - min_val) / (max_val - min_val)
+            image = 0.2126*image[:,:,2] + 0.7152*image[:,:,1] + 0.0722*image[:,:,0]
+            image = remove_outliers_from_image(image)
+        elif hdr_type == "cityscapes":
+            max_val = 65536.0
+            image = image / max_val
+            image = 0.2126*image[:,:,2] + 0.7152*image[:,:,1] + 0.0722*image[:,:,0]
+            image = remove_outliers_from_image(image)
+        else:
+            raise ValueError("Provide a valid HDR Dataset type: OOD, cityscapes")
+            
         bbox_result = _result[img_id]
         for ann in bbox_result:
             for i in range(len(ann)):

@@ -175,6 +175,12 @@ def main():
             bbox_metric = 'area'
         else:
             bbox_metric = args.eval_options['bbox_metric']
+        
+        if 'hdr_type' not in args.eval_options:
+            hdr_type = 'OOD'
+        else:
+            hdr_type = args.eval_options['hdr_type']
+
         if hasattr(cfg.data, 'reference_HDR') and bbox_metric != 'area':
             samples_per_gpu = 1
             dataset_HDR = build_dataset(cfg.data.reference_HDR)
@@ -205,7 +211,7 @@ def main():
     if not distributed:
         model = MMDataParallel(model, device_ids=[0])
         outputs, bbox_quality = single_gpu_test(model, data_loader, args.show, args.show_dir,
-                                  args.show_score_thr, bbox_metric, dataloader_HDR)
+                                  args.show_score_thr, bbox_metric, dataloader_HDR, hdr_type)
     else:
         model = MMDistributedDataParallel(
             model.cuda(),
@@ -225,12 +231,12 @@ def main():
         if args.eval:
             #eval_kwargs = cfg.get('evaluation', {}).copy()
             # hard-code way to remove EvalHook args
+            eval_kwargs.update(dict(metric=args.eval, **kwargs))
             for key in [
                     'interval', 'tmpdir', 'start', 'gpu_collect', 'save_best',
-                    'rule'
+                    'rule', 'hdr_type'
             ]:
                 eval_kwargs.pop(key, None)
-            eval_kwargs.update(dict(metric=args.eval, **kwargs))
             print(dataset.evaluate(outputs, bbox_quality, **eval_kwargs))
 
 

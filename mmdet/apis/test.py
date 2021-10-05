@@ -18,7 +18,9 @@ def single_gpu_test(model,
                     out_dir=None,
                     show_score_thr=0.3,
                     bbox_metric='area',
-                    dataloader_ref=None):
+                    dataloader_ref=None,
+                    hdr_type="OOD",
+                    ):
     model.eval()
     results = []
     values = []
@@ -49,7 +51,8 @@ def single_gpu_test(model,
                 img_tensor = data2['img'][0].data[0]
             img_metas = data2['img_metas'][0].data[0]
             
-            box_metric_values = calculate_bbox_metric(img_tensor, img_metas, result, bbox_metric, out_dir, model)
+            box_metric_values = calculate_bbox_metric(img_tensor, img_metas, 
+                            result, bbox_metric, out_dir, model, hdr_type )
 
         if show or out_dir:
             if batch_size == 1 and isinstance(data['img'][0], torch.Tensor):

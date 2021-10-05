@@ -34,6 +34,22 @@ test_pipeline = [
             dict(type='Collect', keys=['img']),
         ])
 ]
+img_norm_gray = dict(
+    mean=[0.0,0.0, 0.0], std=[1.0, 1.0, 1.0], to_rgb=False)
+HDR_pipeline = [
+    dict(type='LoadImageFromFile', to_float32=True, hdr=True),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(1024, 512),
+        flip=False,
+        transforms=[
+            dict(type='Resize', keep_ratio=True),
+            dict(type='Normalize', **img_norm_gray),
+            dict(type='Pad', size_divisor=32),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='Collect', keys=['img'])
+        ])
+]
 data = dict(
     samples_per_gpu=4,
     workers_per_gpu=2,
@@ -57,5 +73,11 @@ data = dict(
         ann_file=data_root +
         'annotations_8bit/instancesonly_filtered_gtFine_test.json',
         img_prefix=data_root + 'leftImg8bit/test/',
-        pipeline=test_pipeline))
+        pipeline=test_pipeline),
+    reference_HDR=dict(
+        type=dataset_type,
+        ann_file=data_root +
+        'annotations_16bit/instancesonly_filtered_gtFine_test.json',
+        img_prefix=data_root + 'leftImg16bit/test/',
+        pipeline=HDR_pipeline))
 evaluation = dict(interval=1, metric='bbox')

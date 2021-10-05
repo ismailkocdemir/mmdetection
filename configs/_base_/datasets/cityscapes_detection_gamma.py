@@ -34,6 +34,22 @@ test_pipeline = [
             dict(type='Collect', keys=['img']),
         ])
 ]
+img_norm_gray = dict(
+    mean=[0.0,0.0, 0.0], std=[1.0, 1.0, 1.0], to_rgb=False)
+HDR_pipeline = [
+    dict(type='LoadImageFromFile', to_float32=True, hdr=True),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(1024, 512),
+        flip=False,
+        transforms=[
+            dict(type='Resize', keep_ratio=True),
+            dict(type='Normalize', **img_norm_gray),
+            dict(type='Pad', size_divisor=32),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='Collect', keys=['img'])
+        ])
+]
 data = dict(
     samples_per_gpu=4,
     workers_per_gpu=2,
