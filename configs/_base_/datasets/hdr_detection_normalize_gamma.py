@@ -3,7 +3,8 @@ dataset_type = 'HDRDataset'
 data_root = '/truba/home/ikocdemir/data/HDR4RTT/0_RESIZED/'
 
 img_norm_cfg = dict(
-    mean=[0.04894935, 0.03381687, 0.09385127], std=[0.02396633, 0.0240463, 0.0187165], to_rgb=True)
+    mean=[0.19851153, 0.18949101, 0.18018879],
+std=[0.18539416, 0.18330835, 0.18186341], to_rgb=True)
 
 min_max_config = dict(
     min_max_norm=True,

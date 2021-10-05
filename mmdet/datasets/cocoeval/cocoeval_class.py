@@ -836,7 +836,7 @@ class Params:
             if bbox_intervals is None:
                 self.areaRngLbl = ['all', 'small', 'med_small', 'med_large', 'large']
             else:
-                ['all', 's1', 's2', 's3', 's4','s5','s6', 's7', 's8']
+                self.areaRngLbl = ['all', 's1', 's2', 's3', 's4','s5','s6', 's7', 's8']
         else:
             self.areaRngLbl = ['all', 'low', 'med_low', 'med_high', 'high']
         self.useCats = 1

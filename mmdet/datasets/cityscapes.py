@@ -272,7 +272,7 @@ class CityscapesDataset(CocoDataset):
             eval_results.update(
                 self_coco.evaluate(results, bbox_quality, metrics, logger, outfile_prefix,
                                    classwise, proposal_nums, iou_thrs, None, 
-                                   bbox_metric, exp_name, dump_path, True))
+                                   bbox_metric, exp_name, dump_path, use_cityscapes=True))
 
         return eval_results
 

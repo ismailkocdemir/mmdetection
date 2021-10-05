@@ -167,6 +167,24 @@ def main():
         workers_per_gpu=cfg.data.workers_per_gpu,
         dist=distributed,
         shuffle=False)
+    
+    if args.eval:
+        eval_kwargs = cfg.get('evaluation', {}).copy()
+        dataloader_HDR = None
+        if 'bbox_metric' not in args.eval_options:
+            bbox_metric = 'area'
+        else:
+            bbox_metric = args.eval_options['bbox_metric']
+        if hasattr(cfg.data, 'reference_HDR') and bbox_metric != 'area':
+            samples_per_gpu = 1
+            dataset_HDR = build_dataset(cfg.data.reference_HDR)
+            dataloader_HDR = build_dataloader(
+                            dataset_HDR,
+                            samples_per_gpu=samples_per_gpu,
+                            workers_per_gpu=cfg.data.workers_per_gpu,
+                            dist=distributed,
+                            shuffle=False)
+
 
     # build the model and load checkpoint
     cfg.model.train_cfg = None
@@ -187,7 +205,7 @@ def main():
     if not distributed:
         model = MMDataParallel(model, device_ids=[0])
         outputs, bbox_quality = single_gpu_test(model, data_loader, args.show, args.show_dir,
-                                  args.show_score_thr)
+                                  args.show_score_thr, bbox_metric, dataloader_HDR)
     else:
         model = MMDistributedDataParallel(
             model.cuda(),
@@ -205,7 +223,7 @@ def main():
         if args.format_only:
             dataset.format_results(outputs, **kwargs)
         if args.eval:
-            eval_kwargs = cfg.get('evaluation', {}).copy()
+            #eval_kwargs = cfg.get('evaluation', {}).copy()
             # hard-code way to remove EvalHook args
             for key in [
                     'interval', 'tmpdir', 'start', 'gpu_collect', 'save_best',
