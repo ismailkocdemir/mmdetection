@@ -827,8 +827,6 @@ def min_max(img_folder):
     print("min", min_val)
     print("max", max_val)
 
-
-
 def calc_mean_var(img_folder, annotation_file, gamma_enc=False):
     
     psum    = np.array([0.0, 0.0, 0.0])
@@ -855,38 +853,38 @@ def calc_mean_var(img_folder, annotation_file, gamma_enc=False):
             max_val = np.amax(image, axis=(0,1))
             image = (image-min_val) / (max_val-min_val)
             
+            '''
             is_nan = (image != image).any()
             if is_nan:
                 print("NaN before gamma:", is_nan)
                 print("image:", curr_image["file_name"])
 
             gray = convert_to_gray(image)
-            plot_histogram(image, curr_image["file_name"].replace('.exr', '_hist_beforeGamma.png'))            
+            plot_histogram(image, curr_image["file_name"].replace('.exr', '_hist_beforeGamma.png'))      
+            '''      
 
             if gamma_enc:
                 image = image ** 0.454545
             
+            '''
             is_nan = (image != image).any()
             if is_nan:
                 print("NaN after gamma:", is_nan)
                 print("image:", curr_image["file_name"])
 
-            gray = convert_to_gray(image)
-            plot_histogram(image, curr_image["file_name"].replace('.exr', '_hist_afterGamma.png'))
-            
+            #gray = convert_to_gray(image)
+            #plot_histogram(image, curr_image["file_name"].replace('.exr', '_hist_afterGamma.png'))
+            '''
+
             #image *= 65535.0
 
             psum    = psum + image.sum(axis=(0,1))
             psum_sq = psum_sq + (image * image).sum(axis = (0, 1))
             count += (image.shape[0] * image.shape[1])
 
-            # for debugging
-            if idx == 10:
-                break
             
-            print(idx)
-            #if idx % 100 == 0:
-            #    print(idx, end='\r')
+            if idx % 100 == 0:
+                print(idx, end='\r')
             idx += 1
         except Exception as e:
             print(e)
@@ -905,6 +903,20 @@ def calc_mean_var(img_folder, annotation_file, gamma_enc=False):
     print("mean", total_mean)
     print("std", total_std)
 
+def write_image_names_to_file(annotation_file):
+    
+    anno_data = None
+    with open(annotation_file) as json_data:
+        anno_data = json.load(json_data)
+        json_data.close()
+
+    image_info = anno_data["images"]
+
+    with open("test_image_files.txt", "w+") as f:
+        for curr_image in image_info:
+            f.write(curr_image["file_name"] + '\n')
+        
+
 
 
 if __name__ == "__main__":
@@ -916,3 +928,4 @@ if __name__ == "__main__":
 
     data_folder = str(sys.argv[1])
     calc_mean_var(data_folder, '/HDD/H3DR/HDR4RTT/0_RESIZED/annotations/instances_train2020_reduced.json', True)
+    #write_image_names_to_file('/HDD/H3DR/HDR4RTT/0_RESIZED/annotations/instances_test2020_reduced.json')

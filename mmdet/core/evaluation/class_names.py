@@ -4,6 +4,14 @@ import mmcv
 def wider_face_classes():
     return ['face']
 
+def hdr_classes():
+    return ["pottedplant","person", "bottle",
+             "diningtable", "chair", "boat",
+             "motorbike", "sofa", "tv/monitor",
+             "aeroplane",  "dog",  "bicycle",
+             "bus", "bird",   "horse",
+             "train", "sheep", "cat", "cow"
+    ]
 
 def voc_classes():
     return [
@@ -90,6 +98,7 @@ def cityscapes_classes():
 
 
 dataset_aliases = {
+    'hdr': ['hdr', 'ood'],
     'voc': ['voc', 'pascal_voc', 'voc07', 'voc12'],
     'imagenet_det': ['det', 'imagenet_det', 'ilsvrc_det'],
     'imagenet_vid': ['vid', 'imagenet_vid', 'ilsvrc_vid'],
