@@ -5,7 +5,7 @@ def wider_face_classes():
     return ['face']
 
 def hdr_classes():
-    return ["pottedplant","person", "bottle",
+    return [ "pottedplant","person", "car", "bottle",
              "diningtable", "chair", "boat",
              "motorbike", "sofa", "tv/monitor",
              "aeroplane",  "dog",  "bicycle",

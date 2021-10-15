@@ -11,7 +11,7 @@ class HDRDataset(CocoDataset):
                'tv/monitor')
     '''
     CLASSES = (
-             "pottedplant","person", "bottle",
+             "pottedplant","person", "car", "bottle",
              "diningtable", "chair", "boat",
              "motorbike", "sofa", "tv/monitor",
              "aeroplane",  "dog",  "bicycle",
