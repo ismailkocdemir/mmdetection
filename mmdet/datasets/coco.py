@@ -574,6 +574,7 @@ class CocoDataset(CustomDataset):
                         metric_items = [
                             'mAP', 
                             'mAP_50',
+                            'mAP_75',
                             'mAP_s1', 
                             'mAP_s2', 
                             'mAP_s3', 
@@ -587,6 +588,7 @@ class CocoDataset(CustomDataset):
                         metric_items = [
                             'mAP', 'mAP_common', 'mAP_rare', 
                             'mAP_50', 'mAP_50_common', 'mAP_50_rare', 
+                            'mAP_75', 'mAP_75_common', 'mAP_75_rare', 
                             'mAP_low', 'mAP_low_common', 'mAP_low_rare', 
                             'mAP_med_low',  'mAP_med_low_common', 'mAP_med_low_rare', 
                             'mAP_med_high',  'mAP_med_high_common', 'mAP_med_high_rare', 
@@ -599,10 +601,12 @@ class CocoDataset(CustomDataset):
                         f'{cocoEval.stats[coco_metric_names[metric_item]]:.3f}'
                     )
                     eval_results[key] = val
-                ap = cocoEval.stats[:6+3*(bbox_metric=="area")]
+                '''
+                ap = cocoEval.stats[:6+5*(bbox_metric=="area")]
                 eval_results[f'{metric}_mAP_copypaste'] = (
                     f'{ap[0]:.3f} {ap[1]:.3f} {ap[2]:.3f} {ap[3]:.3f} '
                     f'{ap[4]:.3f} {ap[5]:.3f}')
+                '''
         if tmp_dir is not None:
             tmp_dir.cleanup()
         return eval_results

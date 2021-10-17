@@ -399,12 +399,6 @@ class COCOeval:
         I0 = len(_pe.imgIds)
         A0 = len(_pe.areaRng)
 
-        '''
-        tp_by_area = [[] for i in range(T)]
-        fp_by_area = [[] for i in range(T)]
-        fn_by_area = [[] for i in range(T)]
-        #gt_count = [0 for i in range(A)]
-        '''
         # retrieve E at each category, area range, and max number of detections
         for k, k0 in enumerate(k_list):
             Nk = k0 * A0 * I0
@@ -427,14 +421,7 @@ class COCOeval:
                     dtm = np.concatenate(
                         [e['dtMatches'][:, 0:maxDet] for e in E], axis=1)[:,
                                                                         inds]
-                    '''
-                    if self.exp_name:
-                        gtm = np.concatenate([e['gtMatches'] for e in E], axis=1)
 
-                        dtA = np.concatenate([e['dtArea'][0:maxDet] for e in E])[inds]
-
-                        gtA = np.concatenate([e['gtArea'] for e in E])
-                    '''
                     dtIg = np.concatenate(
                         [e['dtIgnore'][:, 0:maxDet] for e in E], axis=1)[:, inds]
 
@@ -446,20 +433,6 @@ class COCOeval:
                     tps = np.logical_and(dtm, np.logical_not(dtIg))
                     fps = np.logical_and(np.logical_not(dtm),
                                          np.logical_not(dtIg))
-                    
-                    '''
-                    if self.exp_name:
-                        fns = np.logical_and(np.logical_not(gtm), np.logical_not(gtIg))
-
-                        for tr in range(T):
-                            areas_tp = dtA[tps[tr]]
-                            #print(dtA.shape, tps[tr].shape, areas_tp.shape)
-                            areas_fp = dtA[fps[tr]]
-                            areas_fn = gtA[fns[tr]]
-                            tp_by_area[tr] += areas_tp.tolist()
-                            fp_by_area[tr] += areas_fp.tolist()
-                            fn_by_area[tr] += areas_fn.tolist()
-                    '''
 
                     tp_sum = np.cumsum(tps, axis=1).astype(dtype=np.float)
                     fp_sum = np.cumsum(fps, axis=1).astype(dtype=np.float)
@@ -505,37 +478,6 @@ class COCOeval:
             'recall': recall,
             'scores': scores,
         }
-        
-        '''
-        json.dump({"count": gt_count[1:]}, open("/home/ismail/H3DR/text_data/{}_count.txt".format(self.exp_name),'w'))
-        if self.exp_name:
-            for tr in range(T):
-                bin_edges = [(16*i)**2 for i in range(6)]
-                plt.clf()
-                bins, edges, _ = plt.hist(tp_by_area[tr], bins=bin_edges, density=False)
-                plot_title = "TP_{:.2f}-IOU_{}".format(0.5 + tr*0.05, self.exp_name)
-                json.dump({"bins":bins.tolist()}, open("/home/ismail/H3DR/{}.txt".format(plot_title),'w'))
-                plt.title(plot_title)
-                plt.xlabel("bbox area")
-                plt.ylabel("frequency")
-                plt.savefig(os.path.join("/home/ismail/H3DR/plots", "{}_hist.png".format(plot_title)))
-                plt.clf()
-                bins, edges, _ = plt.hist(fp_by_area[tr], bins=bin_edges, density=False)
-                plot_title = "FP_{:.2f}-IOU_{}".format(0.5 + tr*0.05, self.exp_name)
-                json.dump({"bins":bins.tolist()}, open("/home/ismail/H3DR/{}.txt".format(plot_title),'w'))
-                plt.title(plot_title)
-                plt.xlabel("bbox area")
-                plt.ylabel("frequency")
-                plt.savefig(os.path.join("/home/ismail/H3DR/plots", "{}_hist.png".format(plot_title)))
-                plt.clf()
-                bins, edges, _ = plt.hist(fn_by_area[tr], bins=bin_edges, density=False)
-                plot_title = "FN_{:.2f}-IOU_{}".format(0.5 + tr*0.05, self.exp_name)
-                json.dump({"bins":bins.tolist()}, open("/home/ismail/H3DR/{}.txt".format(plot_title),'w'))
-                plt.title(plot_title)
-                plt.xlabel("bbox area")
-                plt.ylabel("frequency")
-                plt.savefig(os.path.join("/home/ismail/H3DR/plots", "{}_hist.png".format(plot_title)))
-        '''
         toc = time.time()
         print('DONE (t={:0.2f}s).'.format(toc - tic))
 

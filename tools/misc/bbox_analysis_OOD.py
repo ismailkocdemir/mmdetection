@@ -524,29 +524,17 @@ def main_bbox(data_folder, annotate=False, skip_train=False):
                     continue
             
             bbox_cat = ID_2_CAT[anno["category_id"]]
-            bbox_dims = [int(item) for item in anno["bbox"]]
-            x, y, w, h = bbox_dims
-            normal_area = float(w*h)
+            bbox_dims = anno['bbox']
+            downsized_bbox_dims = [int(item) for item in anno["bbox"]]
+            x, y, w, h = downsized_bbox_dims
+
+            if not is_bbox_valid(downsized_bbox_dims, curr_image.shape):
+                continue
+
+            normal_area = bbox_dims[2] * bbox_dims[3]
             box_image = np.zeros((h,w)) 
             box_image = curr_image[y:y+h, x:x+w]
 
-            '''
-            flag = 0
-            if np.prod(box_image.shape) <= 0:
-                #print("ERR", curr_image.shape, box_image.shape, x,y,w,h)
-                #break
-                box_image = np.zeros((w,h))
-                box_image = curr_image[x:x+w, y:y+h]
-                if np.prod(box_image.shape) <= 0:
-                    print(curr_image.shape, box_image.shape, x,y,w,h, flush=True)
-                    avg_lum = 0
-                    drange = 0
-                    entropy = 0
-                    flag = 1
-            '''
-            
-            if not is_bbox_valid(bbox_dims, curr_image.shape):
-                continue
 
             area = np.sqrt(normal_area) #np.log2(normal_area)
             avg_lum = get_avg_log_luminance(box_image, remove_outliers=False)

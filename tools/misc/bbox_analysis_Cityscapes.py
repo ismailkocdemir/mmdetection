@@ -453,16 +453,16 @@ def main_bbox(data_folder, annotate=False, skip_train=False):
                     continue
             
             bbox_cat = ID_2_CAT[anno["category_id"]]
-            bbox_dims = [int(item/2.0) for item in anno["bbox"]]
+            bbox_dims = anno['bbox']
+            downsized_bbox_dims = [int(item/2.0) for item in anno["bbox"]]
+            x, y, w, h = downsized_bbox_dims
 
-            if not is_bbox_valid(bbox_dims, curr_image.shape):
+            if not is_bbox_valid(downsized_bbox_dims, curr_image.shape):
                 continue
             
-            x, y, w, h = bbox_dims
-            normal_area = w*h*4 
             box_image = np.zeros((w,h)) 
             box_image = curr_image[y:y+h, x:x+w]
-            
+            normal_area = bbox_dims[2] * bbox_dims[3]
             area = np.log2(normal_area)
             avg_lum = get_avg_log_luminance(box_image, remove_outliers=False)
             drange = get_dynamic_range(box_image, remove_outliers=False)

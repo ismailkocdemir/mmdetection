@@ -169,6 +169,8 @@ def main():
         shuffle=False)
     
     if args.eval:
+        if args.eval_options is None:
+            args.eval_options = {}
         eval_kwargs = cfg.get('evaluation', {}).copy()
         dataloader_HDR = None
         if 'bbox_metric' not in args.eval_options:
