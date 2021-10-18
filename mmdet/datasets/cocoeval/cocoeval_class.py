@@ -517,7 +517,8 @@ class COCOeval:
                 # dimension of recall: [TxKxAxM]
                 s = self.eval['recall']
                 if iouThr is not None:
-                    t = np.where(iouThr == p.iouThrs)[0]
+                    #t = np.where(iouThr == p.iouThrs)[0]
+                    t = [next(i for i, _ in enumerate(p.iouThrs) if np.isclose(_, iouThr, 1e-5))]
                     s = s[t]
                 s = s[:, :, aind, mind]
             if len(s[s > -1]) == 0:
